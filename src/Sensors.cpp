@@ -7,7 +7,9 @@ extern tm timeData;
 OneWire tempProbe::oneWire(ONE_WIRE_BUS);
 DallasTemperature tempProbe::sensors(&oneWire);
 std::array<tempProbe, 5> tempProbe::probes = {tempProbe(GLYCOL_ADDR), tempProbe(PREHEAT_ADDR), tempProbe(AMBIENT_ADDR), tempProbe(SOURCE_ADDR), tempProbe(HOT_ADDR)};
-short tempProbe::indexRealTime = 0, tempProbe::indexHourly = 0, tempProbe::indexDaily = 0;
+short tempProbe::indexRealTime = 0; // Holds the most recent 20 samples (20 samples x 6 seconds = 2 minutes of data)
+short tempProbe::indexHourly = 0;   // Holds the most recent 30 maximum temperatures, where each is calculated from the 20 samples in `realTime`
+short tempProbe::indexDaily = 0;    // Holds the most recent 24 maximum temperatures from the 30 entries in `hourly`
 
 // Constructor definition
 tempProbe::tempProbe(const uint8_t *address)
@@ -18,7 +20,7 @@ tempProbe::tempProbe(const uint8_t *address)
     daily.fill(0);
 }
 
-// This function is called every 6 seconds
+// Called every 6 seconds by the loop
 void tempProbe::readAllProbes()
 {
     sensors.requestTemperatures();
@@ -31,9 +33,12 @@ void tempProbe::readAllProbes()
     incrementRealTime();
 }
 
+// Called every 6 seconds
 void tempProbe::incrementRealTime()
 {
     indexRealTime++;
+
+    // Reset index once it reaches the end (this creates a wraparound/circular buffer)
     if (indexRealTime == 20)
     {
         indexRealTime = 0;
@@ -41,6 +46,7 @@ void tempProbe::incrementRealTime()
     }
 }
 
+// Called once every 20 real-time entries (every 20 x 6 = 120 seconds)
 void tempProbe::updateHourlyData()
 {
     for (auto &probe : probes)
@@ -49,6 +55,8 @@ void tempProbe::updateHourlyData()
     }
     flowMeter::instance.hourly[indexHourly] = static_cast<short>(std::accumulate(flowMeter::instance.realTime.begin(), flowMeter::instance.realTime.end(), 0.0) / 10.0);
     indexHourly++;
+
+    // Reset index once it reaches the end (this creates a wraparound/circular buffer)
     if (indexHourly == 30)
     {
         indexHourly = 0;
@@ -56,6 +64,7 @@ void tempProbe::updateHourlyData()
     }
 }
 
+// Called once every 30 hourly entries (every 30 x 2 = 60 minutes)
 void tempProbe::updateDailyData()
 {
     for (auto &probe : probes)
@@ -65,6 +74,8 @@ void tempProbe::updateDailyData()
     flowMeter::instance.daily[indexDaily] = static_cast<short>(std::accumulate(flowMeter::instance.hourly.begin(), flowMeter::instance.hourly.end(), 0.0));
     updateCSV();
     indexDaily++;
+
+    // Reset index once it reaches the end (this creates a wraparound/circular buffer)
     if (indexDaily == 24)
     {
         indexDaily = 0;
