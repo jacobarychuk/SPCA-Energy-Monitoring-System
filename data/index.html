@@ -21,17 +21,16 @@ copies or substantial portions of the Software. -->
     <input type="radio" id="tabtemps" name="rt-tab-control" checked="checked">
     <label for="tabtemps"><i class="fa fa-thermometer" style="font-size: x-large"></i></label>
     <section class="tab">
-      <h3>Realtime Data</h3>
+      <h3>Temperature Monitoring</h3>
       <div id="chart-temperature-rt" class="container"></div> <br>
-      <h3>Historical Data</h3>
       <div class="subtabs">
         <input type="radio" id="tab-temp-hourly" name="hist-temp-tab-control" checked="checked">
-        <label for="tab-temp-hourly">Hourly</label>
+        <label for="tab-temp-hourly">Last Hour</label>
         <div class="tab">
           <div id="chart-temperature-hour" class="container"></div>
         </div>
         <input type="radio" id="tab-temp-daily" name="hist-temp-tab-control">
-        <label for="tab-temp-daily">Daily</label>
+        <label for="tab-temp-daily">Last 24 Hours</label>
         <div class="tab">
           <div id="chart-temperature-day" class="container"></div>
         </div>
@@ -85,8 +84,8 @@ copies or substantial portions of the Software. -->
     <h5 id="wifi-status">Status: Disconnected</h5>
     <input type="text" name="ssid" placeholder="SSID" required>
     <input type="text" name="pass" placeholder="Password" required>
-    <button type="submit">Connect</button>  
-  </form> 
+    <button type="submit">Connect</button>
+  </form>
   </div>
 </body>
 <script src="charts/historical.js"></script>

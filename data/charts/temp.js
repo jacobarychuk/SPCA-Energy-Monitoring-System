@@ -1,7 +1,7 @@
 //Code that creates a chart of realtime temperature data
 var chartTempRT = new Highcharts.Chart({
     chart: { renderTo: 'chart-temperature-rt' },
-    title: { text: 'Temperature Monitoring' },
+    title: { text: 'Live Temperatures (Last 2 Minutes)' },
     series: [
         {
             type: "line",
@@ -73,7 +73,7 @@ setInterval(function () {
 //Code that creates a chart of historical temperature data (2 minute data)
 var chartTempHR = new Highcharts.Chart({
     chart: { renderTo: 'chart-temperature-hour' },
-    title: { text: 'Hourly Maximum Temperatures' },
+    title: { text: 'Historical Temperatures (Last Hour)' },
     series: [
         {
             type: "line",
@@ -144,7 +144,7 @@ setInterval(function () {
 
 var chartTempDay = new Highcharts.Chart({
     chart: { renderTo: 'chart-temperature-day' },
-    title: { text: 'Daily Maximum Temperatures' },
+    title: { text: 'Historical Temperatures (Last 24 Hours)' },
     series: [
         {
             type: "line",
