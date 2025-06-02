@@ -15,7 +15,7 @@ const char* STORED_SSID = "Peachy5.0";
 const char* STORED_PASSWORD = "Friendly";
 
 //Time information
-const char* ntpServer = "pool.ntp.org";
+const char* ntpServer = "time.google.com";
 const long gmtOffset_sec = -28800;
 const int daylightOffset_sec = 3600;
 
@@ -51,10 +51,7 @@ void setup() {
   }
 
   //Configure the WiFi
-  WiFi.mode(WIFI_AP_STA);
-  WiFi.softAP(AP_SSID, AP_PASSWORD);
-  delay(500);
-  WiFi.softAPConfig(ap_IP, ap_gateway, ap_subnet);
+  WiFi.mode(WIFI_STA);
   IPAddress IP = WiFi.softAPIP();
   Serial.print("AP IP address: ");
   Serial.println(IP);
@@ -143,7 +140,7 @@ bool connectWIFI(const char* ssid, const char* pass) {
       Serial.println("Failed to obtain time");
     } else {
       Serial.printf("Current time: %s\n", asctime(&timeData));
-    } 
+    }
       return true;
     }
     delay(3000);
