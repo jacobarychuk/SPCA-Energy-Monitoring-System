@@ -36,6 +36,7 @@ void tempProbe::readAllProbes()
 // Called every 6 seconds
 void tempProbe::incrementRealTime()
 {
+    if (indexRealTime%2) updateCSV(); // Update every other cycle (every 13-15 seconds)
     indexRealTime++;
 
     // Reset index once it reaches the end (this creates a wraparound/circular buffer)
@@ -72,7 +73,6 @@ void tempProbe::updateDailyData()
         probe.daily.at(indexDaily) = *std::max_element(probe.hourly.begin(), probe.hourly.end());
     }
     flowMeter::instance.daily[indexDaily] = static_cast<short>(std::accumulate(flowMeter::instance.hourly.begin(), flowMeter::instance.hourly.end(), 0.0));
-    updateCSV();
     indexDaily++;
 
     // Reset index once it reaches the end (this creates a wraparound/circular buffer)
@@ -182,9 +182,9 @@ void tempProbe::updateCSV()
     data += ",";
     for (auto &probe : probes)
     {
-        data += String(static_cast<float>(probe.daily.at(indexDaily)) / 100.0) + ",";
+        data += String(static_cast<float>(probe.realTime.at(indexRealTime)) / 100.0) + ",";
     }
-    data += String(static_cast<float>(flowMeter::instance.daily.at(indexDaily)) / 100.0);
+    data += String(static_cast<float>(flowMeter::instance.realTime.at(indexRealTime)) / 100.0);
     auto fileHandle = SPIFFS.open("/historical_data.csv", FILE_APPEND);
     if (!fileHandle)
     {
