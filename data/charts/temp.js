@@ -1,3 +1,9 @@
+Highcharts.setOptions({
+    title: {
+        style: { fontSize: '1.2em' },
+    },
+});
+
 //Code that creates a chart of realtime temperature data
 var chartTempRT = new Highcharts.Chart({
     chart: { renderTo: 'chart-temperature-rt' },
@@ -7,30 +13,40 @@ var chartTempRT = new Highcharts.Chart({
             type: "line",
             showInLegend: true,
             name: "Glycol",
+            color: "#1f77b4",
+            dashStyle: "Dot",
             data: []
         },
         {
             type: "line",
             showInLegend: true,
             name: "Solar Preheat",
+            color: "#ff7f0e",
+            dashStyle: "Dash",
             data: []
         },
         {
             type: "line",
             showInLegend: true,
             name: "Room Ambient",
+            color: "#2ca02c",
+            dashStyle: "ShortDash",
             data: []
         },
         {
             type: "line",
             showInLegend: true,
             name: "Cold Water",
+            color: "#17becf",
+            dashStyle: "DashDot",
             data: []
         },
         {
             type: "line",
             showInLegend: true,
             name: "Hot Water",
+            color: "#d62728",
+            dashStyle: "Solid",
             data: []
         },
     ],
