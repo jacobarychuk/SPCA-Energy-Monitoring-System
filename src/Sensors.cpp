@@ -2,6 +2,8 @@
 #include <numeric>
 
 extern tm timeData;
+Sample collectSample();
+void dispatchSample(const Sample&);
 
 // Required initializations
 OneWire tempProbe::oneWire(ONE_WIRE_BUS);
@@ -23,20 +25,30 @@ tempProbe::tempProbe(const uint8_t *address)
 // Called every 6 seconds by the loop
 void tempProbe::readAllProbes()
 {
-    sensors.requestTemperatures();
-    for (auto &probe : probes)
-    {
-        auto temp = probe.sensors.getTempC(probe.uniqueAddress);
-        probe.realTime[indexRealTime] = static_cast<short>(temp * 100);
-    }
-    flowMeter::instance.readFlowMeter();
+    Sample s = collectSample();
+    dispatchSample(s);
     incrementRealTime();
+}
+
+Sample collectSample() {
+    Sample s;
+    s.timestamp = time(nullptr);
+
+    // Read and store values from temperature sensors
+    tempProbe::sensors.requestTemperatures();
+    for (int i = 0; i < NUM_TEMP_PROBES; i++) {
+        auto temp = tempProbe::probes[i].sensors.getTempC(tempProbe::probes[i].uniqueAddress);
+        s.temperatures[i] = static_cast<short>(temp * 100);
+    }
+
+    // Read and store flow rate
+    s.flowRate = flowMeter::instance.getFlowRate();
+    return s;
 }
 
 // Called every 6 seconds
 void tempProbe::incrementRealTime()
 {
-    if (indexRealTime%2) updateCSV(); // Update every other cycle (every 13-15 seconds)
     indexRealTime++;
 
     // Reset index once it reaches the end (this creates a wraparound/circular buffer)
@@ -157,34 +169,18 @@ String tempProbe::getHourlyEnergy()
     return data;
 }
 
-void tempProbe::updateCSV()
+void dispatchSample(const Sample& s)
 {
-    if (!getLocalTime(&timeData))
-        Serial.println("Failed to obtain time");
-    String data = "";
-    // Add timestamp to data in the form YYYY-Month-DD HH:MM:SS
-    data += String(timeData.tm_year + 1900) + "-";
-    if (timeData.tm_mon < 10)
-        data += "0";
-    data += String(timeData.tm_mon + 1) + "-";
-    if (timeData.tm_mday < 10)
-        data += "0";
-    data += String(timeData.tm_mday) + " ";
-    if (timeData.tm_hour < 10)
-        data += "0";
-    data += String(timeData.tm_hour) + ":";
-    if (timeData.tm_min < 10)
-        data += "0";
-    data += String(timeData.tm_min) + ":";
-    if (timeData.tm_sec < 10)
-        data += "0";
-    data += String(timeData.tm_sec);
-    data += ",";
-    for (auto &probe : probes)
-    {
-        data += String(static_cast<float>(probe.realTime.at(indexRealTime)) / 100.0) + ",";
+    // Store in real-time buffer
+    for (int i = 0; i < NUM_TEMP_PROBES; i++) {
+        tempProbe::probes[i].realTime[tempProbe::indexRealTime] = s.temperatures[i];
     }
-    data += String(static_cast<float>(flowMeter::instance.realTime.at(indexRealTime)) / 100.0);
+
+    // Write to CSV
+    String data = String(s.timestamp) + ",";
+    for (short temperature: s.temperatures) data += String(static_cast<float>(temperature / 100.0)) + ",";
+    data += String(static_cast<float>(s.flowRate / 100.0));
+
     auto fileHandle = SPIFFS.open("/historical_data.csv", FILE_APPEND);
     if (!fileHandle)
     {
@@ -244,7 +240,7 @@ void IRAM_ATTR pulseCounter()
     flowMeter::instance.pulses++;
 }
 
-void flowMeter::readFlowMeter()
+short flowMeter::getFlowRate()
 {
     instance.pulses = 0;
 
@@ -254,5 +250,5 @@ void flowMeter::readFlowMeter()
     detachInterrupt(FLOW_METER_PIN);
 
     //Flow rate in L/min = (pulses / 5.5), mulitply by 100 to store in short as two-decimal-point representation
-    instance.realTime.at(tempProbe::indexRealTime) = static_cast<short>(instance.pulses / 5.5 * 100);
+    return static_cast<short>(instance.pulses / 5.5 * 100);
 }

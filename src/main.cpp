@@ -118,7 +118,7 @@ void setup() {
 
 void loop() {
   tempProbe::readAllProbes();
-  delay(5000);  //Actually occurs every 6 seconds because readFlowMeter takes 1 second
+  delay(5000); // Occurs every 6 seconds because getFlowRate takes 1 second
   if(updateWIFI)
   {
     updateWIFI = false;
