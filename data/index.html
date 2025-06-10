@@ -11,7 +11,7 @@ copies or substantial portions of the Software. -->
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" type="text/css" href="style.css">
   <script src="https://kit.fontawesome.com/ca98015c02.js" crossorigin="anonymous"></script>
-  <script src="https://code.highcharts.com/highcharts.js"></script>
+  <script src="https://code.highcharts.com/stock/highstock.js"></script>
 </head>
 
 <body>
@@ -23,18 +23,7 @@ copies or substantial portions of the Software. -->
     <section class="tab">
       <h3>Temperature Monitoring</h3>
       <div id="chart-temperature-rt" class="container"></div> <br>
-      <div class="subtabs">
-        <input type="radio" id="tab-temp-hourly" name="hist-temp-tab-control" checked="checked">
-        <label for="tab-temp-hourly">Last Hour</label>
-        <div class="tab">
-          <div id="chart-temperature-hour" class="container"></div>
-        </div>
-        <input type="radio" id="tab-temp-daily" name="hist-temp-tab-control">
-        <label for="tab-temp-daily">Last 24 Hours</label>
-        <div class="tab">
-          <div id="chart-temperature-day" class="container"></div>
-        </div>
-      </div>
+      <div id="chart-temperature-history" class="container"></div> <br>
     </section>
     <input type="radio" id="tabenergy" name="rt-tab-control">
     <label for="tabenergy"><i class="fa-solid fa-bolt-lightning" style="font-size: x-large"></i></label>

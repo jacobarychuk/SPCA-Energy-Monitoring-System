@@ -70,126 +70,133 @@ setInterval(function () {
     xhttp.send();   //Send the data request
 }, 6000);  //Repeat every 6 seconds
 
-//Code that creates a chart of historical temperature data (2 minute data)
-var chartTempHR = new Highcharts.Chart({
-    chart: { renderTo: 'chart-temperature-hour' },
-    title: { text: 'Historical Temperatures (Last Hour)' },
+// Chart of historical temperature data
+var chartTempHistory = new Highcharts.stockChart({
+    chart: {
+        renderTo: 'chart-temperature-history',
+        zooming: {
+            mouseWheel: { enabled: false },
+        },
+    },
+    title: { text: 'Historical Temperatures' },
+    legend: { enabled: true },
+    navigator: { enabled: false },
+    scrollbar: { enabled: false },
+    rangeSelector: {
+        selected: 0, // Start with "All" selected by default (index 0)
+        buttons: [
+            { type: 'all', text: 'All' },
+            { type: 'day', count: 1, text: '1d' },
+            { type: 'hour', count: 1, text: '1h' },
+            { type: 'minute', count: 1, text: '1m' }
+        ],
+        inputEnabled: true // Allows manual date typing
+    },
     series: [
         {
             type: "line",
             showInLegend: true,
             name: "Glycol",
+            color: "#1f77b4",
+            dashStyle: "Dot",
             data: []
         },
         {
             type: "line",
             showInLegend: true,
             name: "Solar Preheat",
+            color: "#ff7f0e",
+            dashStyle: "Dash",
             data: []
         },
         {
             type: "line",
             showInLegend: true,
             name: "Room Ambient",
+            color: "#2ca02c",
+            dashStyle: "ShortDash",
             data: []
         },
         {
             type: "line",
             showInLegend: true,
             name: "Cold Water",
+            color: "#17becf",
+            dashStyle: "DashDot",
             data: []
         },
         {
             type: "line",
             showInLegend: true,
             name: "Hot Water",
+            color: "#d62728",
+            dashStyle: "Solid",
             data: []
         },
     ],
     plotOptions: {
         line: {
-            animation: false,
-            dataLabels: { enabled: false }
+            dataLabels: { enabled: false },
+            marker: { enabled: false }
         },
     },
     xAxis: {
         title: { text: 'Time' },
         type: 'datetime',
-        dateTimeLabelFormats: { minute: '%H:%M' }
-    },
-    yAxis: {
-        title: { text: 'Temperature (Celsius)' }
-    },
-    credits: { enabled: false }
-});
-//Function that allows the chart to update every 2 minutes
-setInterval(function () {
-    let xhttp = new XMLHttpRequest(); //Create a data request
-    xhttp.onreadystatechange = function () { //Callback function
-        if (this.readyState == 4 && this.status == 200) { //When ready to receive
-            let x = (new Date()).getTime(), //Current time
-                y = this.responseText.split(',').map(Number); //Get the data as an array of floats
-            for (let i = 0; i < 5; i++) {
-                if (chartTempHR.series[i].data.length > 30) { //If there are more than 30 points
-                    chartTempHR.series[i].addPoint([x, y[i]/100], true, true, true); //Add a point and shift
-                } else {
-                    chartTempHR.series[i].addPoint([x, y[i]/100], true, false, true); //Add a point
-                }
+        events: {
+            afterSetExtremes: function (e) { // To pass in the newly selected timestamp range
+                const start = Math.floor(e.min / 1000); // Convert milliseconds to seconds (Highcharts uses milliseconds but we store timestamps as UNIX seconds)
+                const end = Math.floor(e.max / 1000);
+                fetch(`/temperature-range?start=${start}&end=${end}`)
+                    .then(response => {
+                        return response.json();
+                    })
+                    .then(data => {
+                        chartTempHistory.series[0].setData(data.glycol);
+                        chartTempHistory.series[1].setData(data.preheat);
+                        chartTempHistory.series[2].setData(data.ambient);
+                        chartTempHistory.series[3].setData(data.source);
+                        chartTempHistory.series[4].setData(data.hot);
+                    })
+                    .catch(error => {
+                        console.error("Error fetching historical data:", error);
+                    });
             }
         }
-    };
-    xhttp.open("GET", "/temperature-hr", true); //Open the data request
-    xhttp.send();   //Send the data request
-}, 120000);  //Repeat every 2 minutes
-
-var chartTempDay = new Highcharts.Chart({
-    chart: { renderTo: 'chart-temperature-day' },
-    title: { text: 'Historical Temperatures (Last 24 Hours)' },
-    series: [
-        {
-            type: "line",
-            showInLegend: true,
-            name: "Glycol",
-            data: []
-        },
-        {
-            type: "line",
-            showInLegend: true,
-            name: "Solar Preheat",
-            data: []
-        },
-        {
-            type: "line",
-            showInLegend: true,
-            name: "Room Ambient",
-            data: []
-        },
-        {
-            type: "line",
-            showInLegend: true,
-            name: "Cold Water",
-            data: []
-        },
-        {
-            type: "line",
-            showInLegend: true,
-            name: "Hot Water",
-            data: []
-        }
-    ],
-    plotOptions: {
-        line: {
-            animation: false,
-            dataLabels: { enabled: false }
-        },
-    },
-    xAxis: {
-        title: { text: 'Time' },
-        type: 'datetime',
-        dateTimeLabelFormats: { minute: '%H:%M' }
     },
     yAxis: {
-        title: { text: 'Temperature (Celsius)' }
+        title: { text: 'Temperature (Celsius)' },
+        opposite: false,
     },
-    credits: { enabled: false }
+    credits: { enabled: false },
 });
+
+const fetchInitialData = () => {
+    const now = Math.floor(Date.now() / 1000); // Unix seconds
+    const start = now - (60 * 60 * 24); // Last 24 hours
+    const end = now;
+
+    fetch(`/temperature-range?start=${start}&end=${end}`)
+        .then(response => {
+            return response.json();
+        })
+        .then(data => {
+
+            // Check if any of the series have data (avoid initializing until the CSV contains data)
+            const hasData = data.glycol && data.glycol.length > 0;
+            if (!hasData) {
+                return;
+            }
+
+            chartTempHistory.series[0].setData(data.glycol);
+            chartTempHistory.series[1].setData(data.preheat);
+            chartTempHistory.series[2].setData(data.ambient);
+            chartTempHistory.series[3].setData(data.source);
+            chartTempHistory.series[4].setData(data.hot);
+        })
+        .catch(error => {
+            console.error("Error fetching historical data:", error);
+        });
+};
+
+fetchInitialData();
